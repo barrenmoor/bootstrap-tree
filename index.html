@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Developing a Tree Widget</title>
+
+	<link rel="stylesheet" href="scripts/thirdparty/bootstrap-3.1.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="scripts/thirdparty/bootstrap-3.1.1/css/bootstrap-theme.min.css">
+
+	<script src="scripts/thirdparty/jquery/jquery-1.11.0.js"></script>
+	<script src="scripts/thirdparty/bootstrap-3.1.1/js/bootstrap.min.js"></script>
+
+	<link rel="stylesheet" href="styles/tree.css">
+	<script src="scripts/data.js"></script>
+	<script type="text/javascript">
+		var makeId = function() {
+			var text = "";
+			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+			for(var i = 0; i < 5; i++) {
+				text += possible.charAt(Math.floor(Math.random() * possible.length));
+			}
+
+			return text;
+		};
+
+		var Tree = function(treeId, options) {
+			var treeSelector = "#" + treeId;
+			var root;
+
+			var expand = function(node) {
+				node.status = 'opened';
+				var renderedchildren = node.renderedchildren;
+				node.renderedchildren = true;
+
+				$(treeSelector + " #img_" + node.id).attr("src", "images/opened-node.png");
+
+				for(var i in node.children) {
+					if(renderedchildren) {
+						$(treeSelector + " #node_" + node.children[i].id).show();
+					} else {
+						render(node.children[i], node.level + 1, node.id);
+					}
+				}
+			};
+
+			var collapse = function(node) {
+				node.status = 'closed';
+				$(treeSelector + " #img_" + node.id).attr("src", "images/closed-node.png");
+
+				for(var i in node.children) {
+					$(treeSelector + " #node_" + node.children[i].id).hide();
+				}
+			};
+
+			var render = function(node, level, under) {
+				var name = node.name;
+				var id = node.id;
+
+				node.level = level;
+				node.status = 'closed';
+				node.renderedchildren = false;
+
+				$(under ? (treeSelector + " #node_" + under) : treeSelector).append("<div id='node_" + id + "' class='node-div'></div>");
+				
+				addNodeContents(node);
+				
+				if(node.container) {
+					$(treeSelector + " #img_" + id).on("click", function() {
+						if(node.status == 'closed') {
+							expand(node);
+						} else {
+							collapse(node);
+						}
+					});					
+				}
+			};
+
+			var addNodeContents = function(node) {
+				$(treeSelector + " #node_" + node.id).append("<span id='node_span_" + node.id + "' style='padding-left:" + (5 + (node.level * 20)) + "px; white-space: nowrap;' class='node-text'></span>");
+				addIcon(node);
+				$(treeSelector + " #node_span_" + node.id).append("<span id='node_name_span_" + node.id + "' style='padding-left: 5px;'>" + node.name + "</span>");
+				addMenu(node);
+			};
+
+			var addMenu = function(node) {
+				if((node.container && (!options.foldermenu || options.foldermenu.length == 0)) || (node.container == false && (!options.itemmenu || options.itemmenu.length == 0))) {
+					return;
+				}
+
+				var menu = node.container ? options.foldermenu : options.itemmenu;
+
+				$(treeSelector + " #node_span_" + node.id).append("<span id='menu_span_" + node.id + "' style='padding-left: 5px; display: none;'></span>");
+				$(treeSelector + " #menu_span_" + node.id).append("<div id='menu_div_" + node.id + "' class='dropdown' style='display: inline-block;'></div>");
+				$(treeSelector + " #menu_div_" + node.id).append("<div class='menu-caret-div' data-toggle='dropdown'><span class='caret'></span></div>");
+				$(treeSelector + " #menu_div_" + node.id).append("<ul id='menu_ul_" + node.id + "' class='dropdown-menu' role='menu'></ul>");
+
+				$(treeSelector + " #node_span_" + node.id).on("mouseenter", function() {
+					$(treeSelector + " #menu_span_" + node.id).show();
+				});
+				$(treeSelector + " #node_span_" + node.id).on("mouseleave", function() {
+					$(treeSelector + " #menu_span_" + node.id).hide();
+				});
+
+				$(treeSelector + " #menu_div_" + node.id + " .menu-caret-div").on("click", function() {
+					if(node.menucreated) {
+						return;
+					}
+
+					node.menucreated = true;
+					$.each(menu, function(index, value) {
+						var menuId = makeId();
+						var disabled = false;
+
+						$(treeSelector + " #menu_ul_" + node.id).append("<li id='" + menuId + "' role='presentation'><a class='menuitem menu-item'>" + menu[index].title + "</a></li>");
+
+						if(menu[index].when) {
+							var when = menu[index].when;
+							if($.inArray(node[when.attrib], when.values) < 0) {
+								$(treeSelector + " #" + menuId).addClass("disabled");
+								disabled = true;
+							}
+						}
+
+						if(!disabled) {
+							$(treeSelector + " #" + menuId).on("click", function() {
+								menu[index].callback(node);
+							});
+						}
+					});
+				});
+			};
+
+			var addIcon = function(node) {
+				var padding = node.container ? "5" : "16";
+				var icon = node.container ? "images/folder.png" : "images/item.png";
+
+				if(node.container) {
+					$(treeSelector + " #node_span_" + node.id).append("<img id='img_" + node.id + "' src='images/closed-node.png'>");
+				}
+				$(treeSelector + " #node_span_" + node.id).append("<img style='padding-left: " + padding + "px;' src='" + icon + "'>");
+			};
+
+			var removeFromParent = function(node) {
+				var parent = null;
+				var index = -1;
+
+				var walk = function(current) {
+					if(!current.container) {
+						return;
+					}
+					for(var i in current.children) {
+						if(current.children[i].id == node.id) {
+							parent = current;
+							index = i;
+							return;
+						}
+						walk(current.children[i]);
+					}
+				};
+
+				walk(root);
+
+				if(parent != null && index != -1) {
+					parent.children.splice(index, 1);
+				}
+			}
+
+			return {
+				show : function(data) {
+					root = data;
+					for(var i in root.children) {
+						render(root.children[i], 0);
+					}
+				},
+				add : function(node, parent) {
+					if(parent.renderedchildren) {
+						render(node, parent.level + 1, (parent.id == root.id ? undefined : parent.id));
+						if(parent.status == 'closed') {
+							$(treeSelector + " #node_" + node.id).hide();
+						}
+					}
+
+					parent.children.push(node);
+				},
+				rename : function(newName, node) {
+					$(treeSelector + " #node_name_span_" + node.id).text(newName);
+					node.name = newName;
+				},
+				delete: function(node) {
+					$(treeSelector + " #node_" + node.id).remove();
+					removeFromParent(node);
+				}
+			};
+		};
+
+		$(document).ready(function() {
+			var tree = new Tree("my-tree", {
+				foldermenu: [{
+					title: "New Subfolder",
+					callback: function(node) {
+						tree.add({
+							name: "Another one bites the dust",
+							id: makeId(),
+							container: true,
+							children: []
+						}, node);
+					}
+				}, {
+					title: "New Report",
+					callback: function(node) {
+						tree.add({
+							name: "This is a report",
+							id: makeId(),
+							permissions: "EXEC",
+							container: false,
+							children: null
+						}, node);
+					}
+				}, {
+					title: "Rename",
+					callback: function(node) {
+						tree.rename("Kashmir", node);
+					}
+				}, {
+					title: "Delete",
+					callback: function(node) {
+						tree.delete(node);
+					}
+				}],
+
+				itemmenu: [{
+					title: "Launch",
+					callback: function(node) {
+						alert("I am going to launch the report by name '" + node.name + "'");
+					},
+					when: {
+						attrib: "permissions",
+						values: ["EXEC", "EXEC_WRITE"]
+					}
+				}, {
+					title: "Edit",
+					callback: function(node) {
+						alert("I am going to edit the report by name '" + node.name + "'");
+					},
+					when: {
+						attrib: "permissions",
+						values: ["EXEC_WRITE"]
+					}
+				}]
+			});
+
+			tree.show(generated);
+		});
+	</script>
+</head>
+<body>
+	<div id="my-tree" class="tree-container"></div>
+	<hr>
+</body>
+</html>

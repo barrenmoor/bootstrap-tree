@@ -1,0 +1,31 @@
+.tree-container {
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.node-text:hover {
+	background-color: #eeeeee;
+	cursor: pointer;	
+	border-radius: 6px;
+	padding-right: 8px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+}
+
+.node-div {
+	padding-top: 1px;
+}
+
+.menu-item {
+	cursor: pointer;
+}
+
+.menu-caret-div {
+	width: 30px;
+	text-align: center;
+	border-left: 2px solid;
+	border-color: #ffffff;
+	margin-left: 15px;
+}
