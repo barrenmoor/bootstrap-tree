@@ -52,6 +52,62 @@
 				}
 			};
 
+			var getHtml = function(nodes, callback) {
+				var getNumWorkers = function(size) {
+					var maxWorkers = 10;
+					if(size <= 100) {
+						return 1;
+					} else if(size <= 500) {
+						return 5;
+					} else {
+						return 10;
+					}
+				};
+
+				var numWorkers = getNumWorkers(nodes.length);
+				var workerSize = parseInt(Math.ceil(nodes.length / numWorkers));
+				var workers = [];
+				var responses = [];
+				var messages = [];
+				var countDownLatch = numWorkers;
+
+				for(var i = 0; i < numWorkers; i++) {
+					messages.push({
+						index: i,
+						chunkSize: workerSize,
+						json: []
+					});
+
+					for(var j = 0; j < workerSize; j++) {
+						var index = j + (i * workerSize);
+						if(index == nodes.length) {
+							break;
+						}
+						messages[i].json.push(nodes[index]);
+					}
+				}
+
+				for(var i = 0; i < numWorkers; i++) {
+					workers.push(new Worker("worker.js"));
+					responses.push({});
+
+					workers[i].addEventListener("message", function(e) {
+						var obj = JSON.parse(e.data);
+						responses[obj.index] = obj.html;
+
+						if(--countDownLatch == 0) {
+							var html = "";
+							for(var j in responses) {
+								html += responses[j];
+							}
+							callback(html);
+						}
+					}, false);
+
+					workers[i].postMessage(JSON.stringify(messages[i]));
+				}
+			};
+
 			var render = function(node, level, under) {
 				var name = node.name;
 				var id = node.id;
@@ -171,6 +227,10 @@
 					for(var i in root.children) {
 						render(root.children[i], 0);
 					}
+
+					getHtml(root.children, function(html) {
+						$("body").append(html);
+					});
 				},
 				add : function(node, parent) {
 					if(parent.renderedchildren) {

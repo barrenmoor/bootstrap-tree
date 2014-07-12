@@ -83,7 +83,7 @@ var generate = function(num) {
 	}
 }
 
-generate(1000);
+generate(1210);
 
 var root = {
    "name":"Reports",
