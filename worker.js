@@ -3,9 +3,11 @@ self.addEventListener('message', function(e) {
 	var children = obj.json;
 	var chunkSize = obj.chunkSize;
 
+	importScripts("treedom.js");
+
 	var html = "";
 	for(var i in children) {
-		html += "<font face=\"verdana\" size=\"3\" color=\"#ff0000\">" + ((obj.index * chunkSize) + parseInt(i) + 1) + ". " + children[i].name + "</font><br>";
+		html += domParser.getHtml(children[i], parseInt(obj.level));
 	}
 
 	var message = JSON.stringify({
