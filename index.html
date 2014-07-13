@@ -48,6 +48,7 @@
 							child.level = node.level + 1;
 							child.status = 'closed';
 							child.renderedchildren = false;
+							child.menuattached = false;
 
 							if(child.container) {
 								$(treeSelector + " #img_" + child.id).on("click", function() {
@@ -206,10 +207,12 @@
 				},
 				add : function(node, parent) {
 					if(parent.renderedchildren) {
-						render(node, parent.level + 1, (parent.id == root.id ? undefined : parent.id));
-						if(parent.status == 'closed') {
-							$(treeSelector + " #node_" + node.id).hide();
-						}
+						getHtml([node], parent.level + 1, function(html) {
+							$(treeSelector + " #node_" + parent.id).append(html);
+							if(parent.status == 'closed') {
+								$(treeSelector + " #node_" + node.id).hide();
+							}
+						});
 					}
 
 					parent.children.push(node);
@@ -226,16 +229,23 @@
 		};
 
 		$(document).ready(function() {
+			$("#subfolderSaveBtn").on('click', function() {
+				$("#newSubfolderModal").modal('hide');
+				tree.add({
+					name: $("#newSubFolderName").val(),
+					id: makeId(),
+					container: true,
+					children: []
+				}, JSON.parse($("#newSubfolderModal").attr("parent-node")));
+				$("#newSubFolderName").val("");
+			});
+
 			var tree = new Tree("my-tree", {
 				foldermenu: [{
 					title: "New Subfolder",
 					callback: function(node) {
-						tree.add({
-							name: "Another one bites the dust",
-							id: makeId(),
-							container: true,
-							children: []
-						}, node);
+						$("#newSubfolderModal").attr("parent-node", JSON.stringify(node));
+						$("#newSubfolderModal").modal('show');
 					}
 				}, {
 					title: "New Report",
@@ -263,7 +273,7 @@
 				itemmenu: [{
 					title: "Launch",
 					callback: function(node) {
-						alert("I am going to launch the report by name '" + node.name + "'");
+						alert("I am going to launch " + node.name);
 					},
 					when: {
 						attrib: "permissions",
@@ -280,13 +290,34 @@
 					}
 				}]
 			});
-
-			tree.show(generated);
+			tree.show(root);
 		});
 	</script>
 </head>
 <body>
 	<div id="my-tree" class="tree-container"></div>
 	<hr>
+	<div id="newSubfolderModal" class="modal fade">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">New Sub-folder</h4>
+				</div>
+				<div class="modal-body">
+					<form role="form">
+						<div class="form-group">
+							<label for="newSubFolderName">Folder Name</label>
+							<input type="text" class="form-control" id="newSubFolderName" placeholder="Enter Folder Name">
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button id="subfolderSaveBtn" type="button" class="btn btn-primary">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </body>
 </html>
