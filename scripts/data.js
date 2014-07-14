@@ -1,39 +1,39 @@
-// var root = {
-// 	name: "Dashboards",
-// 	id: "123",
-// 	container: true,
-// 	children: [{
-// 			name: "My first folder",
-// 			id: "124",
-// 			container: true,
-// 			children: []
-// 		},{
-// 			name: "I opened this folder",
-// 			id: "125",
-// 			container: true,
-// 			children: [{
-// 				name: "A sub-folder",
-// 				id: "126",
-// 				container: true,
-// 				children: [{
-// 					name: "How about another sub-folder with a really loooooooong name?",
-// 					id: "128",
-// 					container: true,
-// 					children: []
-// 				}, {
-// 					name: "This is an item",
-// 					id: "129",
-// 					container: false,
-// 					children: null
-// 				}]
-// 			}]
-// 		}, {
-// 			name: "How about this folder?",
-// 			id: "127",
-// 			container: true,
-// 			children: null
-// 		}]
-// };
+var root = {
+	name: "Dashboards",
+	id: "123",
+	container: true,
+	children: [{
+			name: "My first folder",
+			id: "124",
+			container: true,
+			children: []
+		},{
+			name: "I opened this folder",
+			id: "125",
+			container: true,
+			children: [{
+				name: "A sub-folder",
+				id: "126",
+				container: true,
+				children: [{
+					name: "How about another sub-folder with a really loooooooong name?",
+					id: "128",
+					container: true,
+					children: []
+				}, {
+					name: "This is an item",
+					id: "129",
+					container: false,
+					children: null
+				}]
+			}]
+		}, {
+			name: "How about this folder?",
+			id: "127",
+			container: true,
+			children: []
+		}]
+};
 
 var makebigid = function() {
 	var text = "";
@@ -85,7 +85,7 @@ var generate = function(num) {
 
 generate(3000);
 
-var root = {
+var bigroot = {
    "name":"Reports",
    "id":"CCCCCCCC11111111AAAAAAAA00000003",
    "permissions":"EXEC_WRITE",

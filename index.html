@@ -9,8 +9,11 @@
 	<script src="scripts/thirdparty/jquery/jquery-1.11.0.js"></script>
 	<script src="scripts/thirdparty/bootstrap-3.1.1/js/bootstrap.min.js"></script>
 
-	<link rel="stylesheet" href="styles/tree.css">
+	<link rel="stylesheet" href="scripts/tree/css/tree.css">
+
 	<script src="scripts/data.js"></script>
+	<script src="scripts/tree/js/tree.js"></script>
+
 	<script type="text/javascript">
 		var makeId = function() {
 			var text = "";
@@ -23,212 +26,14 @@
 			return text;
 		};
 
-		var Tree = function(treeId, options) {
-			var treeSelector = "#" + treeId;
-			var root;
-
-			var expand = function(node) {
-				var renderedchildren = node.renderedchildren;
-				node.renderedchildren = true;
-				node.status = 'opened';
-
-				if(renderedchildren) {
-					$(treeSelector + " #img_" + node.id).attr("src", "images/opened-node.png");
-					for(var i in node.children) {
-						$(treeSelector + " #node_" + node.children[i].id).show();
-					}
-				} else {
-					getHtml(node.children, node.level + 1, function(html) {
-						$(node.level == -1 ? treeSelector : treeSelector + " #node_" + node.id).append(html);
-						if(node.level > -1) {
-							$(treeSelector + " #img_" + node.id).attr("src", "images/opened-node.png");
-						}
-
-						$.each(node.children, function(index, child) {
-							child.level = node.level + 1;
-							child.status = 'closed';
-							child.renderedchildren = false;
-							child.menuattached = false;
-
-							if(child.container) {
-								$(treeSelector + " #img_" + child.id).on("click", function() {
-									if(child.status == 'closed') {
-										expand(child);
-									} else {
-										collapse(child);
-									}
-								});
-							}
-
-							$(treeSelector + " #node_span_" + child.id).on("mouseenter", function() {
-								$(treeSelector + " #menu_span_" + child.id).show();
-
-								if(!child.menuattached) {
-									child.menuattached = true;
-
-									$(treeSelector + " #menu_div_" + child.id + " .menu-caret-div").on("click", function() {
-										if(child.menucreated) {
-											return;
-										}
-
-										child.menucreated = true;
-										var menu = child.container ? options.foldermenu : options.itemmenu;
-
-										$.each(menu, function(index, value) {
-											var menuId = makeId();
-											var disabled = false;
-
-											$(treeSelector + " #menu_ul_" + child.id).append("<li id='" + menuId + "' role='presentation'><a class='menuitem menu-item'>" + menu[index].title + "</a></li>");
-
-											if(menu[index].when) {
-												var when = menu[index].when;
-												if($.inArray(child[when.attrib], when.values) < 0) {
-													$(treeSelector + " #" + menuId).addClass("disabled");
-													disabled = true;
-												}
-											}
-
-											if(!disabled) {
-												$(treeSelector + " #" + menuId).on("click", function() {
-													menu[index].callback(child);
-												});
-											}
-										});
-									});
-								}
-							});
-
-							$(treeSelector + " #node_span_" + child.id).on("mouseleave", function() {
-								$(treeSelector + " #menu_span_" + child.id).hide();
-							});
-						});
-					});					
-				}
-			};
-
-			var collapse = function(node) {
-				node.status = 'closed';
-				$(treeSelector + " #img_" + node.id).attr("src", "images/closed-node.png");
-
-				for(var i in node.children) {
-					$(treeSelector + " #node_" + node.children[i].id).hide();
-				}
-			};
-
-			var getHtml = function(nodes, level, callback) {
-				var getNumWorkers = function(size) {
-					var maxWorkers = 10;
-					if(size <= 100) {
-						return 1;
-					} else if(size <= 500) {
-						return 5;
-					} else {
-						return 10;
-					}
-				};
-
-				var numWorkers = getNumWorkers(nodes.length);
-				var workerSize = parseInt(Math.ceil(nodes.length / numWorkers));
-				var workers = [];
-				var responses = [];
-				var messages = [];
-				var countDownLatch = numWorkers;
-
-				for(var i = 0; i < numWorkers; i++) {
-					messages.push({
-						index: i,
-						level: level,
-						chunkSize: workerSize,
-						json: []
-					});
-
-					for(var j = 0; j < workerSize; j++) {
-						var index = j + (i * workerSize);
-						if(index == nodes.length) {
-							break;
-						}
-						messages[i].json.push(nodes[index]);
-					}
-				}
-
-				for(var i = 0; i < numWorkers; i++) {
-					workers.push(new Worker("worker.js"));
-					responses.push({});
-
-					workers[i].addEventListener("message", function(e) {
-						var obj = JSON.parse(e.data);
-						responses[obj.index] = obj.html;
-
-						if(--countDownLatch == 0) {
-							var html = "";
-							for(var j in responses) {
-								html += responses[j];
-							}
-							callback(html);
-						}
-					}, false);
-
-					workers[i].postMessage(JSON.stringify(messages[i]));
-				}
-			};
-
-			var removeFromParent = function(node) {
-				var parent = null;
-				var index = -1;
-
-				var walk = function(current) {
-					if(!current.container) {
-						return;
-					}
-					for(var i in current.children) {
-						if(current.children[i].id == node.id) {
-							parent = current;
-							index = i;
-							return;
-						}
-						walk(current.children[i]);
-					}
-				};
-
-				walk(root);
-
-				if(parent != null && index != -1) {
-					parent.children.splice(index, 1);
-				}
-			}
-
-			return {
-				show : function(data) {
-					root = data;
-					root.level = -1;
-					root.renderedchildren = false;
-
-					expand(root);
-				},
-				add : function(node, parent) {
-					if(parent.renderedchildren) {
-						getHtml([node], parent.level + 1, function(html) {
-							$(treeSelector + " #node_" + parent.id).append(html);
-							if(parent.status == 'closed') {
-								$(treeSelector + " #node_" + node.id).hide();
-							}
-						});
-					}
-
-					parent.children.push(node);
-				},
-				rename : function(newName, node) {
-					$(treeSelector + " #node_name_span_" + node.id).text(newName);
-					node.name = newName;
-				},
-				delete: function(node) {
-					$(treeSelector + " #node_" + node.id).remove();
-					removeFromParent(node);
-				}
-			};
-		};
-
 		$(document).ready(function() {
+			//a context object that can be used for scoping
+			var callbackContext = {};
+
+			$("#newSubfolderForm").on("submit", function() {
+				return false;
+			});
+
 			$("#subfolderSaveBtn").on('click', function() {
 				$("#newSubfolderModal").modal('hide');
 				tree.add({
@@ -236,16 +41,19 @@
 					id: makeId(),
 					container: true,
 					children: []
-				}, JSON.parse($("#newSubfolderModal").attr("parent-node")));
-				$("#newSubFolderName").val("");
+				}, callbackContext.parent);
 			});
 
+			//construct the tree
 			var tree = new Tree("my-tree", {
 				foldermenu: [{
 					title: "New Subfolder",
 					callback: function(node) {
-						$("#newSubfolderModal").attr("parent-node", JSON.stringify(node));
+						$("#newSubFolderName").val("");
 						$("#newSubfolderModal").modal('show');
+						callbackContext = {
+							parent: node
+						};
 					}
 				}, {
 					title: "New Report",
@@ -289,8 +97,9 @@
 						values: ["EXEC_WRITE"]
 					}
 				}]
-			});
-			tree.show(root);
+			}, bigroot);
+
+			tree.show();
 		});
 	</script>
 </head>
@@ -305,7 +114,7 @@
 					<h4 class="modal-title">New Sub-folder</h4>
 				</div>
 				<div class="modal-body">
-					<form role="form">
+					<form id = "newSubfolderForm" role="form">
 						<div class="form-group">
 							<label for="newSubFolderName">Folder Name</label>
 							<input type="text" class="form-control" id="newSubFolderName" placeholder="Enter Folder Name">
@@ -313,8 +122,8 @@
 					</form>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button id="subfolderSaveBtn" type="button" class="btn btn-primary">Save changes</button>
+					<button id="subfolderSaveBtn" type="submit" class="btn btn-primary">Save changes</button>
+					<button type="submit" class="btn btn-default" data-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
