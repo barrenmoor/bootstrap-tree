@@ -92,9 +92,15 @@ var bigroot = {
    "container":true,
    "children":[
       {
+         name: "Custom",
+         id: "E235B84510000123000000150S4E5A8E",
+         permissions: "EXEC_WRITE",
+         container: true,
+         children: []
+   }, {
          "name":"Stock",
          "id":"CCCCCCCC11111111AAAAAAAA00000005",
-         "permissions":"EXEC_WRITE",
+         "permissions":"EXEC",
          "container":true,
          "children":[
             {
@@ -684,7 +690,7 @@ var bigroot = {
             {
                "name":"Intelligence Center Admin",
                "id":"CCCCCCCC11111111AAAAAAAE00000007",
-               "permissions":"EXEC_WRITE",
+               "permissions":"EXEC",
                "container":true,
                "children":[
                   {
