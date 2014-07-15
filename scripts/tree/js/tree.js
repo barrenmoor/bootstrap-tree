@@ -73,6 +73,17 @@ var Tree = function(treeId, options, data) {
 				});
 			}
 
+			var menuHidden = function() {
+				if($(treeSelector + " #menu_ul_" + child.id).is(":visible")) {
+					return;
+				}
+
+				if(selectedNode != child) {
+					$(treeSelector + " #menu_span_" + child.id).hide();
+					$(treeSelector + " #node_span_" + child.id).removeClass("node-text");
+				}
+			};
+
 			$(treeSelector + " #node_span_" + child.id).on("mouseenter", function() {
 				$(treeSelector + " #menu_span_" + child.id).show();
 				$(treeSelector + " #node_span_" + child.id).addClass("node-text");
@@ -83,6 +94,8 @@ var Tree = function(treeId, options, data) {
 					$(treeSelector + " #node_name_span_" + child.id).on("click", function() {
 						selectNode(child);
 					});
+
+					$(treeSelector + " #menu_div_" + child.id).on("hidden.bs.dropdown", menuHidden);
 
 					$(treeSelector + " #menu_div_" + child.id + " .menu-caret-div").on("click", function() {
 						if(child.menucreated) {
@@ -116,16 +129,7 @@ var Tree = function(treeId, options, data) {
 				}
 			});
 
-			$(treeSelector + " #node_span_" + child.id).on("mouseleave", function() {
-				if($(treeSelector + " #menu_ul_" + child.id).is(":visible")) {
-					return;
-				}
-
-				if(selectedNode != child) {
-					$(treeSelector + " #menu_span_" + child.id).hide();
-					$(treeSelector + " #node_span_" + child.id).removeClass("node-text");
-				}
-			});
+			$(treeSelector + " #node_span_" + child.id).on("mouseleave", menuHidden);
 		});
 	};
 
