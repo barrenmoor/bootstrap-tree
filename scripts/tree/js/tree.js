@@ -48,6 +48,12 @@ var Tree = function(treeId, options, data) {
 
 			selectedNode = node;
 
+			if($(treeSelector + " #node_span_" + node.id).isOnScreen() == false) {
+				$('html, body').animate({
+					scrollTop: $(treeSelector + " #node_span_" + node.id).offset().top
+				}, 'fast');
+			}
+
 			$(treeSelector + " #node_span_" + node.id).removeClass("node-text");
 			$(treeSelector + " #node_span_" + node.id).addClass("selected-node");
 			$(treeSelector + " #node_name_span_" + node.id).addClass("selected-node-text");
@@ -180,7 +186,7 @@ var Tree = function(treeId, options, data) {
 		});
 
 		var rightArrowPressed = function() {
-			if(selectedNode == null || selectedNode.container == false || selectedNode.status == 'opened') {
+			if(selectedNode.container == false || selectedNode.status == 'opened') {
 				return;
 			} else {
 				expand(selectedNode);
@@ -188,9 +194,7 @@ var Tree = function(treeId, options, data) {
 		};
 
 		var leftArrowPressed = function() {
-			if(selectedNode == null) {
-				return;
-			} else if(selectedNode.container == false || selectedNode.status == 'closed') {
+			if(selectedNode.container == false || selectedNode.status == 'closed') {
 				var parent = getParent(selectedNode);
 				if(parent != null && parent.id != root.id) {
 					selectNode(parent);
@@ -201,9 +205,7 @@ var Tree = function(treeId, options, data) {
 		};
 
 		var downArrowPressed = function() {
-			if(selectedNode == null) {
-				return;
-			} else if(selectedNode.container == false || 
+			if(selectedNode.container == false || 
 						selectedNode.status == 'closed' || 
 						(selectedNode.status == 'opened' && selectedNode.children.length == 0)) {
 				var next = getNextSibling(selectedNode);
@@ -228,48 +230,45 @@ var Tree = function(treeId, options, data) {
 		};
 
 		var upArrowPressed = function() {
-			if(selectedNode == null) {
-				return;
-			} else {
-				var prev = getPrevSibling(selectedNode);
-				if(prev != null) {
-					while(prev.container == true && prev.status == 'opened') {
-						var lastChild = getLastChild(prev);
-						if(null != lastChild) {
-							prev = lastChild;
-						} else {
-							break;
-						}
-					}
-				} else if(prev == null) {
-					prev = getParent(selectedNode);
-					if(prev.id == root.id) {
-						prev = null;
+			var prev = getPrevSibling(selectedNode);
+			if(prev != null) {
+				while(prev.container == true && prev.status == 'opened') {
+					var lastChild = getLastChild(prev);
+					if(null != lastChild) {
+						prev = lastChild;
+					} else {
+						break;
 					}
 				}
+			} else if(prev == null) {
+				prev = getParent(selectedNode);
+				if(prev.id == root.id) {
+					prev = null;
+				}
+			}
 
-				if(prev != null) {
-					selectNode(prev);
-				}
+			if(prev != null) {
+				selectNode(prev);
 			}
 		};
 
 		$(treeSelector).on("keydown", function(event) {
+			if(selectedNode == null || $.inArray(event.which, [37, 38, 39, 40]) < 0) {
+				return;
+			}
+
+			event.preventDefault();
 			switch(event.which) {
 				case 39:
-					event.preventDefault();
 					rightArrowPressed();
 					break;
 				case 37:
-					event.preventDefault();
 					leftArrowPressed();
 					break;
 				case 40:
-					event.preventDefault();
 					downArrowPressed();
 					break;
 				case 38:
-					event.preventDefault();
 					upArrowPressed();
 					break;
 				default:
@@ -411,8 +410,28 @@ var Tree = function(treeId, options, data) {
 		}
 	}
 
+	var registerIsOnScreen = function() {
+		$.fn.isOnScreen = function(){
+		    var win = $(window);
+		    var viewport = {
+		        top : win.scrollTop(),
+		        left : win.scrollLeft()
+		    };
+
+		    viewport.right = viewport.left + win.width();
+		    viewport.bottom = viewport.top + win.height();
+		    
+		    var bounds = this.offset();
+		    bounds.right = bounds.left + this.outerWidth();
+		    bounds.bottom = bounds.top + this.outerHeight();
+		    
+		    return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));		    
+		};
+	};
+
 	return {
 		show : function() {
+			registerIsOnScreen();
 			attachKBHandlers();
 			expand(root);
 		},
@@ -440,6 +459,8 @@ var Tree = function(treeId, options, data) {
 			}
 		},
 		rename : function(newName, node) {
+			//TODO: placement of the node may change after renaming. (because of sorting)
+			//TODO: this needs to be taken care of.
 			$(treeSelector + " #node_name_span_" + node.id).text(newName);
 			node.name = newName;
 		},
