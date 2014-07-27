@@ -3,7 +3,6 @@ var Tree = function(treeId, options, data) {
 	var root = data;
 	var selectedNode = null;
 
-	root.level = -1;
 	root.renderedchildren = false;
 
 	var makeId = function() {
@@ -62,9 +61,8 @@ var Tree = function(treeId, options, data) {
 		}
 	};
 
-	var attachHandlers = function(nodes, level) {
+	var attachHandlers = function(nodes) {
 		$.each(nodes, function(index, child) {
-			child.level = level;
 			child.status = 'closed';
 			child.renderedchildren = false;
 			child.menuattached = false;
@@ -92,7 +90,9 @@ var Tree = function(treeId, options, data) {
 
 			$(treeSelector + " #node_span_" + child.id).on("mouseenter", function() {
 				$(treeSelector + " #menu_span_" + child.id).show();
-				$(treeSelector + " #node_span_" + child.id).addClass("node-text");
+				if(selectedNode == null || selectedNode.id != child.id) {
+					$(treeSelector + " #node_span_" + child.id).addClass("node-text");
+				}
 
 				if(!child.menuattached) {
 					child.menuattached = true;
@@ -140,9 +140,9 @@ var Tree = function(treeId, options, data) {
 	};
 
 	var append = function(parent, children, callback) {
-		getHtml(children, parent.level + 1, function(html) {
+		getHtml(children, function(html) {
 			callback(html);
-			attachHandlers(children, parent.level + 1);
+			attachHandlers(children);
 		});
 	};
 
@@ -156,16 +156,19 @@ var Tree = function(treeId, options, data) {
 		node.status = 'opened';
 
 		if(renderedchildren) {
-			$(treeSelector + " #img_" + node.id).attr("src", "scripts/tree/images/opened-node.png");
+			$(treeSelector + " #img_" + node.id).removeClass("node-closed");
+			$(treeSelector + " #img_" + node.id).addClass("node-opened");
+
 			for(var i in node.children) {
 				$(treeSelector + " #node_" + node.children[i].id).show();
 			}
 		} else {
 			node.children.sort(compareNodes);
 			append(node, node.children, function(html) {
-				$(node.level == -1 ? treeSelector : treeSelector + " #node_" + node.id).append(html);
-				if(node.level > -1) {
-					$(treeSelector + " #img_" + node.id).attr("src", "scripts/tree/images/opened-node.png");
+				$(node.id == root.id ? treeSelector : treeSelector + " #node_" + node.id).append(html);
+				if(node.id != root.id) {
+					$(treeSelector + " #img_" + node.id).removeClass("node-closed");
+					$(treeSelector + " #img_" + node.id).addClass("node-opened");
 				}
 			});
 		}
@@ -173,7 +176,9 @@ var Tree = function(treeId, options, data) {
 
 	var collapse = function(node) {
 		node.status = 'closed';
-		$(treeSelector + " #img_" + node.id).attr("src", "scripts/tree/images/closed-node.png");
+
+		$(treeSelector + " #img_" + node.id).removeClass("node-opened");
+		$(treeSelector + " #img_" + node.id).addClass("node-closed");
 
 		for(var i in node.children) {
 			$(treeSelector + " #node_" + node.children[i].id).hide();
@@ -277,9 +282,8 @@ var Tree = function(treeId, options, data) {
 		});
 	};
 
-	var getHtml = function(nodes, level, callback) {
+	var getHtml = function(nodes, callback) {
 		var getNumWorkers = function(size) {
-			var maxWorkers = 10;
 			if(size <= 100) {
 				return 1;
 			} else if(size <= 500) {
@@ -299,7 +303,6 @@ var Tree = function(treeId, options, data) {
 		for(var i = 0; i < numWorkers; i++) {
 			messages.push({
 				index: i,
-				level: level,
 				chunkSize: workerSize,
 				json: []
 			});
@@ -326,7 +329,7 @@ var Tree = function(treeId, options, data) {
 					for(var j in responses) {
 						html += responses[j];
 					}
-					callback(html);
+					callback("<ul class='node-ul'>" + html + "</ul>");
 				}
 			}, false);
 

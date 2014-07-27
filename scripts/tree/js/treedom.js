@@ -1,33 +1,25 @@
 var domParser = (function(){
 	return {
-		getHtml: function(node, level) {
+		getHtml: function(node) {
 			var id = node.id;
 			var name = node.name;
 
-			var html = "<div id='node_" + id + "' class='node-div'>";
-			html += "<span id='node_span_" + id + "' style='padding-left:" + (5 + (level * 20)) + "px; white-space: nowrap;'>"
-
-			var padding = node.container ? "5" : "16";
-			var icon = node.container ? "scripts/tree/images/folder.png" : "scripts/tree/images/item.png";
-
-			if(node.container) {
-				//add open/close arrow mark for folders
-				html += "<img id='img_" + node.id + "' src='scripts/tree/images/closed-node.png'>";
-			}
-
-			//add icon - either folder or file. If file, padding includes the width of pointer.
-			html += "<img style='padding-left: " + padding + "px;' src='" + icon + "'>";
-			//add title of the node
-			html += "<span id='node_name_span_" + id + "' style='padding-left: 5px;'>" + name + "</span>";
-
-			//add menu toggle
-			html += "<span id='menu_span_" + node.id + "' style='padding-left: 5px; display: none;'>";
-			html += "<div id='menu_div_" + node.id + "' class='dropdown' style='display: inline-block;'>"
-			html += "<div id='menu_caret_div_" + node.id + "' class='menu-caret-div' data-toggle='dropdown'><span class='caret'></span></div>";
-			html += "<ul id='menu_ul_" + node.id + "' class='dropdown-menu' role='menu'></ul>"
-			html += "</div></span>";
-
-			html += "</span></div>"
+			html = "<li id='node_" + id + "' class='node-li'>" +
+				"<div id='node_div_" + id + "' class='node-div'>" +
+					"<span id='node_span_" + id + "' class='node-hover'>" +
+						"<span id='img_" + id + "' class='node-icon " + (node.container ? "node-closed" : "node-non-expandable") + "'></span>" +
+						"<span class='node-icon " + (node.container ? "node-folder" : "node-item") + "'></span>" +
+						"<span id='node_name_span_" + id + "' class='node-name'>" + name + "</span>" +
+						//attach context menu
+						"<span id='menu_span_" + id + "' style='display:none;'>" +
+							"<div id='menu_div_" + id + "' class='dropdown' style='display:inline-block;'>" +
+								"<div id='menu_caret_div_" + id + "' data-toggle='dropdown' class='menu-caret-div'><span class='caret'></span></div>" +
+								"<ul id='menu_ul_" + id + "' class='dropdown-menu' role='menu'></ul>" +
+							"</div>" + //menu_div
+						"</span>" + //menu_span
+				"</span>" + //node_span
+				"</div>" + //node_div
+			"</li>"; //node_
 
 			return html;
 		}

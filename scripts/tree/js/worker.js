@@ -7,7 +7,7 @@ self.addEventListener('message', function(e) {
 
 	var html = "";
 	for(var i in children) {
-		html += domParser.getHtml(children[i], parseInt(obj.level));
+		html += domParser.getHtml(children[i]);
 	}
 
 	var message = JSON.stringify({
