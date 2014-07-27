@@ -435,6 +435,9 @@ var Tree = function(treeId, options, data) {
 	return {
 		show : function() {
 			registerIsOnScreen();
+
+			$(treeSelector).addClass("tree-container");
+
 			attachKBHandlers();
 			expand(root);
 		},

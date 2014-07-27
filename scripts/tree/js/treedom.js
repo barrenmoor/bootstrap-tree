@@ -7,7 +7,7 @@ var domParser = (function(){
 			html = "<li id='node_" + id + "' class='node-li'>" +
 				"<div id='node_div_" + id + "' class='node-div'>" +
 					"<span id='node_span_" + id + "' class='node-hover'>" +
-						"<span id='img_" + id + "' class='node-icon " + (node.container ? "node-closed" : "node-non-expandable") + "'></span>" +
+						"<span id='img_" + id + "' class='node-icon " + (node.container ? "node-closed" : "node-non-expandable") + "'>&nbsp;</span>" +
 						"<span class='node-icon " + (node.container ? "node-folder" : "node-item") + "'></span>" +
 						"<span id='node_name_span_" + id + "' class='node-name'>" + name + "</span>" +
 						//attach context menu
