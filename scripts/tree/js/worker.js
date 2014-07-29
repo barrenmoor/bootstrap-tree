@@ -1,13 +1,13 @@
 self.addEventListener('message', function(e) {
 	var obj = JSON.parse(e.data);
 	var children = obj.json;
-	var chunkSize = obj.chunkSize;
+	var options = obj.options;
 
 	importScripts("treedom.js");
 
 	var html = "";
 	for(var i in children) {
-		html += domParser.getHtml(children[i]);
+		html += domParser.getHtml(children[i], options);
 	}
 
 	var message = JSON.stringify({

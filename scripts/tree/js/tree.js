@@ -159,13 +159,11 @@ var Tree = function(treeId, options, data) {
 			$(treeSelector + " #img_" + node.id).removeClass("node-closed");
 			$(treeSelector + " #img_" + node.id).addClass("node-opened");
 
-			for(var i in node.children) {
-				$(treeSelector + " #node_" + node.children[i].id).show();
-			}
+			$(treeSelector + " #children_of_" + node.id).show();
 		} else {
 			node.children.sort(compareNodes);
 			append(node, node.children, function(html) {
-				$(node.id == root.id ? treeSelector : treeSelector + " #node_" + node.id).append(html);
+				$(node.id == root.id ? treeSelector : treeSelector + " #node_" + node.id).append("<ul id='children_of_" + node.id + "' class='node-ul'>" + html + "</ul>");
 				if(node.id != root.id) {
 					$(treeSelector + " #img_" + node.id).removeClass("node-closed");
 					$(treeSelector + " #img_" + node.id).addClass("node-opened");
@@ -180,9 +178,7 @@ var Tree = function(treeId, options, data) {
 		$(treeSelector + " #img_" + node.id).removeClass("node-opened");
 		$(treeSelector + " #img_" + node.id).addClass("node-closed");
 
-		for(var i in node.children) {
-			$(treeSelector + " #node_" + node.children[i].id).hide();
-		}
+		$(treeSelector + " #children_of_" + node.id).hide();
 	};
 
 	var attachKBHandlers = function() {
@@ -303,7 +299,7 @@ var Tree = function(treeId, options, data) {
 		for(var i = 0; i < numWorkers; i++) {
 			messages.push({
 				index: i,
-				chunkSize: workerSize,
+				options: options,
 				json: []
 			});
 
@@ -329,7 +325,7 @@ var Tree = function(treeId, options, data) {
 					for(var j in responses) {
 						html += responses[j];
 					}
-					callback("<ul class='node-ul'>" + html + "</ul>");
+					callback(html);
 				}
 			}, false);
 
@@ -451,7 +447,7 @@ var Tree = function(treeId, options, data) {
 			if(parent.renderedchildren) {
 				append(parent, [node], function(html) {
 					if(size == 1 || size == (index - 1)) {
-						$(treeSelector + " #node_" + parent.id).append(html);
+						$(treeSelector + " #children_of_" + parent.id).append(html);
 					} else if(index == 0) {
 						$(treeSelector + " #node_" + parent.children[index + 1].id).before(html);
 					} else {
