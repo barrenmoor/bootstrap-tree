@@ -27,10 +27,10 @@ define('Tree', [], function() {
 			} else {
 				return 0;
 			}
-		}
+		};
 
 		var selectNode = function(node) {
-			if(node == selectedNode) {
+			if(node === selectedNode) {
 				selectedNode = null;
 
 				$(treeSelector + " #node_span_" + node.id).removeClass("selected-node");
@@ -48,7 +48,7 @@ define('Tree', [], function() {
 
 				selectedNode = node;
 
-				if($(treeSelector + " #node_span_" + node.id).isOnScreen() == false) {
+				if($(treeSelector + " #node_span_" + node.id).isOnScreen() === false) {
 					$('html, body').animate({
 						scrollTop: $(treeSelector + " #node_span_" + node.id).offset().top
 					}, 'fast');
@@ -70,7 +70,7 @@ define('Tree', [], function() {
 
 				if(child.container) {
 					$(treeSelector + " #img_" + child.id).on("click", function() {
-						if(child.status == 'closed') {
+						if(child.status === 'closed') {
 							expand(child);
 						} else {
 							collapse(child);
@@ -83,7 +83,7 @@ define('Tree', [], function() {
 						return;
 					}
 
-					if(selectedNode != child) {
+					if(selectedNode !== child) {
 						$(treeSelector + " #menu_span_" + child.id).hide();
 						$(treeSelector + " #node_span_" + child.id).removeClass("node-text");
 					}
@@ -91,7 +91,7 @@ define('Tree', [], function() {
 
 				$(treeSelector + " #node_span_" + child.id).on("mouseenter", function() {
 					$(treeSelector + " #menu_span_" + child.id).show();
-					if(selectedNode == null || selectedNode.id != child.id) {
+					if(selectedNode === null || selectedNode.id !== child.id) {
 						$(treeSelector + " #node_span_" + child.id).addClass("node-text");
 					}
 
@@ -148,7 +148,7 @@ define('Tree', [], function() {
 		};
 
 		var expand = function(node) {
-			if(node.container == false) {
+			if(node.container === false) {
 				return;
 			}
 
@@ -164,8 +164,8 @@ define('Tree', [], function() {
 			} else {
 				node.children.sort(compareNodes);
 				append(node, node.children, function(html) {
-					$(node.id == root.id ? treeSelector : treeSelector + " #node_" + node.id).append("<ul id='children_of_" + node.id + "' class='node-ul'>" + html + "</ul>");
-					if(node.id != root.id) {
+					$(node.id === root.id ? treeSelector : treeSelector + " #node_" + node.id).append("<ul id='children_of_" + node.id + "' class='node-ul'>" + html + "</ul>");
+					if(node.id !== root.id) {
 						$(treeSelector + " #img_" + node.id).removeClass("node-closed");
 						$(treeSelector + " #img_" + node.id).addClass("node-opened");
 					}
@@ -188,7 +188,7 @@ define('Tree', [], function() {
 			});
 
 			var rightArrowPressed = function() {
-				if(selectedNode.container == false || selectedNode.status == 'opened') {
+				if(selectedNode.container === false || selectedNode.status === 'opened') {
 					return;
 				} else {
 					expand(selectedNode);
@@ -196,27 +196,27 @@ define('Tree', [], function() {
 			};
 
 			var leftArrowPressed = function() {
-				if(selectedNode.container == false || selectedNode.status == 'closed') {
+				if(selectedNode.container === false || selectedNode.status === 'closed') {
 					var parent = getParent(selectedNode);
-					if(parent != null && parent.id != root.id) {
+					if(parent !== null && parent.id !== root.id) {
 						selectNode(parent);
 					}
-				} else if(selectedNode.status == 'opened') {
+				} else if(selectedNode.status === 'opened') {
 					collapse(selectedNode);
 				}
 			};
 
 			var downArrowPressed = function() {
-				if(selectedNode.container == false || 
-							selectedNode.status == 'closed' || 
-							(selectedNode.status == 'opened' && selectedNode.children.length == 0)) {
+				if(selectedNode.container === false || 
+							selectedNode.status === 'closed' || 
+							(selectedNode.status === 'opened' && selectedNode.children.length === 0)) {
 					var next = getNextSibling(selectedNode);
 					var current = selectedNode;
 
 					while(next == null) {
 						var parent = getParent(current);
 						current = parent;
-						if(parent.id != root.id) {
+						if(parent.id !== root.id) {
 							next = getNextSibling(parent);
 						} else {
 							break;
@@ -226,7 +226,7 @@ define('Tree', [], function() {
 					if(next != null) {
 						selectNode(next);
 					}
-				} else if(selectedNode.status == 'opened' && selectedNode.children.length > 0) {
+				} else if(selectedNode.status === 'opened' && selectedNode.children.length > 0) {
 					selectNode(selectedNode.children[0]);
 				}
 			};
@@ -234,7 +234,7 @@ define('Tree', [], function() {
 			var upArrowPressed = function() {
 				var prev = getPrevSibling(selectedNode);
 				if(prev != null) {
-					while(prev.container == true && prev.status == 'opened') {
+					while(prev.container === true && prev.status === 'opened') {
 						var lastChild = getLastChild(prev);
 						if(null != lastChild) {
 							prev = lastChild;
@@ -244,7 +244,7 @@ define('Tree', [], function() {
 					}
 				} else if(prev == null) {
 					prev = getParent(selectedNode);
-					if(prev.id == root.id) {
+					if(prev.id === root.id) {
 						prev = null;
 					}
 				}
@@ -306,36 +306,38 @@ define('Tree', [], function() {
 
 				for(var j = 0; j < workerSize; j++) {
 					var index = j + (i * workerSize);
-					if(index == nodes.length) {
+					if(index === nodes.length) {
 						break;
 					}
 					messages[i].json.push(nodes[index]);
 				}
 			}
 
-			for(var i = 0; i < numWorkers; i++) {
+			var workerCallback = function(e) {
+				var obj = JSON.parse(e.data);
+				responses[obj.index] = obj.html;
+
+				if(--countDownLatch === 0) {
+					var html = "";
+					for(var j in responses) {
+						html += responses[j];
+					}
+					callback(html);
+				}
+			};
+
+			for(var k = 0; k < numWorkers; k++) {
 				workers.push(new Worker("scripts/tree/js/worker.js"));
 				responses.push({});
 
-				workers[i].addEventListener("message", function(e) {
-					var obj = JSON.parse(e.data);
-					responses[obj.index] = obj.html;
+				workers[k].addEventListener("message", workerCallback, false);
 
-					if(--countDownLatch == 0) {
-						var html = "";
-						for(var j in responses) {
-							html += responses[j];
-						}
-						callback(html);
-					}
-				}, false);
-
-				workers[i].postMessage(JSON.stringify(messages[i]));
+				workers[k].postMessage(JSON.stringify(messages[k]));
 			}
 		};
 
 		var getParent = function(node) {
-			if(node.id == root.id) {
+			if(node.id === root.id) {
 				return node;
 			}
 
@@ -345,7 +347,7 @@ define('Tree', [], function() {
 					return;
 				}
 				for(var i in current.children) {
-					if(current.children[i].id == node.id) {
+					if(current.children[i].id === node.id) {
 						parent = current;
 						break;
 					} else {
@@ -360,7 +362,7 @@ define('Tree', [], function() {
 
 		var getChildIndex = function(parent, child) {
 			for(var i in parent.children) {
-				if(parent.children[i].id == child.id) {
+				if(parent.children[i].id === child.id) {
 					return parseInt(i);
 				}
 			}
@@ -373,7 +375,7 @@ define('Tree', [], function() {
 			var myIndex = getChildIndex(parent, node);
 			var nextSiblingIndex = myIndex + 1;
 
-			if(parent.children.length == nextSiblingIndex) {
+			if(parent.children.length === nextSiblingIndex) {
 				return null;
 			} else {
 				return parent.children[nextSiblingIndex];
@@ -390,25 +392,25 @@ define('Tree', [], function() {
 			} else {
 				return parent.children[prevSiblingIndex];
 			}
-		}
+		};
 
 		var getLastChild = function(node) {
 			var size = node.children.length;
-			if(size == 0) {
+			if(size === 0) {
 				return null;
 			} else {
 				return node.children[size - 1];
 			}
-		}
+		};
 
 		var removeFromParent = function(node) {
 			var parent = getParent(node);
 			var index = getChildIndex(parent, node);
 
-			if(parent != null && index != -1) {
+			if(parent !== null && index !== -1) {
 				parent.children.splice(index, 1);
 			}
-		}
+		};
 
 		var registerIsOnScreen = function() {
 			$.fn.isOnScreen = function(){
@@ -447,15 +449,15 @@ define('Tree', [], function() {
 
 				if(parent.renderedchildren) {
 					append(parent, [node], function(html) {
-						if(size == 1 || size == (index - 1)) {
+						if(size === 1 || size === (index - 1)) {
 							$(treeSelector + " #children_of_" + parent.id).append(html);
-						} else if(index == 0) {
+						} else if(index === 0) {
 							$(treeSelector + " #node_" + parent.children[index + 1].id).before(html);
 						} else {
 							$(treeSelector + " #node_" + parent.children[index - 1].id).after(html);
 						}
 
-						if(parent.status == 'closed') {
+						if(parent.status === 'closed') {
 							$(treeSelector + " #node_" + node.id).hide();
 						}
 					});
