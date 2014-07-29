@@ -6,6 +6,7 @@
 	<link rel="stylesheet" href="scripts/thirdparty/bootstrap-3.1.1/css/bootstrap.min.css">
 	<link rel="stylesheet" href="scripts/thirdparty/bootstrap-3.1.1/css/bootstrap-theme.min.css">
 
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.14/require.js"></script>
 	<script src="scripts/thirdparty/jquery/jquery-1.11.0.js"></script>
 	<script src="scripts/thirdparty/bootstrap-3.1.1/js/bootstrap.min.js"></script>
 
@@ -15,133 +16,135 @@
 	<script src="scripts/tree/js/tree.js"></script>
 
 	<script type="text/javascript">
-		var makeId = function() {
-			var text = "";
-			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		require(['Tree'], function(Tree) {
+			var makeId = function() {
+				var text = "";
+				var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-			for(var i = 0; i < 5; i++) {
-				text += possible.charAt(Math.floor(Math.random() * possible.length));
-			}
+				for(var i = 0; i < 5; i++) {
+					text += possible.charAt(Math.floor(Math.random() * possible.length));
+				}
 
-			return text;
-		};
+				return text;
+			};
 
-		$(document).ready(function() {
-			//a context object that can be used for scoping
-			var callbackContext = {};
+			$(document).ready(function() {
+				//a context object that can be used for scoping
+				var callbackContext = {};
 
-			$("#newSubfolderForm").on("submit", function() {
-				return false;
+				$("#newSubfolderForm").on("submit", function() {
+					return false;
+				});
+				$("#newReportForm").on("submit", function() {
+					return false;
+				});
+
+				$("#subfolderSaveBtn").on('click', function() {
+					$("#newSubfolderModal").modal('hide');
+					tree.add({
+						name: $("#newSubFolderName").val(),
+						id: makeId(),
+						container: true,
+						permissions: $("input:radio[name=subfolderPermissions]:checked").val(),
+						children: []
+					}, callbackContext.parent);
+				});
+
+				$("#reportSaveBtn").on('click', function() {
+					$("#newReportModal").modal('hide');
+					tree.add({
+						name: $("#newReportName").val(),
+						id: makeId(),
+						container: false,
+						permissions: $("input:radio[name=reportPermissions]:checked").val(),
+						children: null
+					}, callbackContext.parent);
+				});
+
+				$("#deleteBtn").on("click", function() {
+					$("#deleteModal").modal('hide');
+					tree.delete(callbackContext.node);
+				});
+
+				//construct the tree
+				var tree = new Tree("my-tree", {
+					foldermenu: [{
+						title: "New Subfolder",
+						callback: function(node) {
+							$("#newSubFolderName").val("");
+							$("input:radio[name=subfolderPermissions]").prop("checked", false);
+							$("#newSubfolderModal").modal('show');
+							callbackContext = {
+								parent: node
+							};
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC_WRITE"]
+						}
+					}, {
+						title: "New Report",
+						callback: function(node) {
+							$("#newReportName").val("");
+							$("input:radio[name=reportPermissions]").prop("checked", false);
+							$("#newReportModal").modal('show');
+							callbackContext = {
+								parent: node
+							};
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC_WRITE"]
+						}
+					}, {
+						title: "Delete",
+						callback: function(node) {
+							$("#deleteModal").modal('show');
+							callbackContext = {
+								node: node
+							};
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC_WRITE"]
+						}
+					}],
+
+					itemmenu: [{
+						title: "Launch",
+						callback: function(node) {
+							alert("Launching report - '" + node.name + "'");
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC", "EXEC_WRITE"]
+						}
+					}, {
+						title: "Edit",
+						callback: function(node) {
+							alert("Editing report - '" + node.name + "'");
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC_WRITE"]
+						}
+					}, {
+						title: "Delete",
+						callback: function(node) {
+							$("#deleteModal").modal('show');
+							callbackContext = {
+								node: node
+							};
+						},
+						when: {
+							attrib: "permissions",
+							values: ["EXEC_WRITE"]
+						}
+					}]
+				}, bigroot);
+
+				tree.show();
 			});
-			$("#newReportForm").on("submit", function() {
-				return false;
-			});
-
-			$("#subfolderSaveBtn").on('click', function() {
-				$("#newSubfolderModal").modal('hide');
-				tree.add({
-					name: $("#newSubFolderName").val(),
-					id: makeId(),
-					container: true,
-					permissions: $("input:radio[name=subfolderPermissions]:checked").val(),
-					children: []
-				}, callbackContext.parent);
-			});
-
-			$("#reportSaveBtn").on('click', function() {
-				$("#newReportModal").modal('hide');
-				tree.add({
-					name: $("#newReportName").val(),
-					id: makeId(),
-					container: false,
-					permissions: $("input:radio[name=reportPermissions]:checked").val(),
-					children: null
-				}, callbackContext.parent);
-			});
-
-			$("#deleteBtn").on("click", function() {
-				$("#deleteModal").modal('hide');
-				tree.delete(callbackContext.node);
-			});
-
-			//construct the tree
-			var tree = new Tree("my-tree", {
-				foldermenu: [{
-					title: "New Subfolder",
-					callback: function(node) {
-						$("#newSubFolderName").val("");
-						$("input:radio[name=subfolderPermissions]").prop("checked", false);
-						$("#newSubfolderModal").modal('show');
-						callbackContext = {
-							parent: node
-						};
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC_WRITE"]
-					}
-				}, {
-					title: "New Report",
-					callback: function(node) {
-						$("#newReportName").val("");
-						$("input:radio[name=reportPermissions]").prop("checked", false);
-						$("#newReportModal").modal('show');
-						callbackContext = {
-							parent: node
-						};
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC_WRITE"]
-					}
-				}, {
-					title: "Delete",
-					callback: function(node) {
-						$("#deleteModal").modal('show');
-						callbackContext = {
-							node: node
-						};
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC_WRITE"]
-					}
-				}],
-
-				itemmenu: [{
-					title: "Launch",
-					callback: function(node) {
-						alert("Launching report - '" + node.name + "'");
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC", "EXEC_WRITE"]
-					}
-				}, {
-					title: "Edit",
-					callback: function(node) {
-						alert("Editing report - '" + node.name + "'");
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC_WRITE"]
-					}
-				}, {
-					title: "Delete",
-					callback: function(node) {
-						$("#deleteModal").modal('show');
-						callbackContext = {
-							node: node
-						};
-					},
-					when: {
-						attrib: "permissions",
-						values: ["EXEC_WRITE"]
-					}
-				}]
-			}, bigroot);
-
-			tree.show();
 		});
 	</script>
 </head>
