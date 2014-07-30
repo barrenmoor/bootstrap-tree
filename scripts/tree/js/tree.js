@@ -1,21 +1,104 @@
-define('Tree', [], function() {
+define('UIDGenerator', [], function() {
+	return (function() {
+		return {
+			nextId: function(len) {
+				var maxLen = len || 10;
+				var text = "";
+				var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+				for(var i = 0; i < maxLen; i++) {
+					text += possible.charAt(Math.floor(Math.random() * possible.length));
+				}
+				return text;	
+			}
+		};
+	})();
+});
+
+define('TreeInfo', [], function() {
+	return (function() {
+		return {
+			parent: function(root, node) {
+				if(node.id === root.id) {
+					return node;
+				}
+
+				var parent = null;
+				var traverse = function(current) {
+					if(!current.container) {
+						return;
+					}
+					for(var i in current.children) {
+						if(current.children[i].id === node.id) {
+							parent = current;
+							break;
+						} else {
+							traverse(current.children[i]);
+						}
+					}
+				};
+
+				traverse(root);
+				return parent;
+			},
+			childIndex: function(parent, child) {
+				for(var i in parent.children) {
+					if(parent.children[i].id === child.id) {
+						return parseInt(i);
+					}
+				}
+				return -1;
+			},
+			nextSibling: function(root, node) {
+				var parent = this.parent(root, node);
+				var myIndex = this.childIndex(parent, node);
+				var nextSiblingIndex = myIndex + 1;
+
+				if(parent.children.length === nextSiblingIndex) {
+					return null;
+				} else {
+					return parent.children[nextSiblingIndex];
+				}				
+			},
+			prevSibling: function(root, node) {
+				var parent = this.parent(root, node);
+				var myIndex = this.childIndex(parent, node);
+				var prevSiblingIndex = myIndex - 1;
+
+				if(prevSiblingIndex < 0) {
+					return null;
+				} else {
+					return parent.children[prevSiblingIndex];
+				}				
+			},
+			lastChild: function(node) {
+				var size = node.children.length;
+				if(size === 0) {
+					return null;
+				} else {
+					return node.children[size - 1];
+				}
+			},
+			removeFromParent: function(root, node) {
+				var parent = this.parent(root, node);
+				if(parent == null) {
+					return;
+				}
+				var index = this.childIndex(parent, node);
+				parent.children.splice(index, 1);
+			}
+		};
+	})();
+});
+
+
+define('Tree', ['UIDGenerator', 'TreeInfo'], function(UIDGenerator, TreeInfo) {
 	return function(treeId, options, data) {
 		var treeSelector = "#" + treeId;
 		var root = data;
 		var selectedNode = null;
 
 		root.renderedchildren = false;
-
-		var makeId = function() {
-			var text = "";
-			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-			for(var i = 0; i < 5; i++) {
-				text += possible.charAt(Math.floor(Math.random() * possible.length));
-			}
-
-			return text;
-		};
 
 		var compareNodes = function(a, b) {
 			if((a.container && b.container) || (!a.container && !b.container)) {
@@ -113,7 +196,7 @@ define('Tree', [], function() {
 							var menu = child.container ? options.foldermenu : options.itemmenu;
 
 							$.each(menu, function(index, value) {
-								var menuId = makeId();
+								var menuId = UIDGenerator.nextId();
 								var disabled = false;
 
 								$(treeSelector + " #menu_ul_" + child.id).append("<li id='" + menuId + "' role='presentation'><a class='menuitem menu-item'>" + menu[index].title + "</a></li>");
@@ -228,7 +311,7 @@ define('Tree', [], function() {
 
 			var leftArrowPressed = function() {
 				if(selectedNode.container === false || selectedNode.status === 'closed') {
-					var parent = getParent(selectedNode);
+					var parent = TreeInfo.parent(root, selectedNode);
 					if(parent !== null && parent.id !== root.id) {
 						selectNode(parent);
 					}
@@ -241,14 +324,14 @@ define('Tree', [], function() {
 				if(selectedNode.container === false || 
 							selectedNode.status === 'closed' || 
 							(selectedNode.status === 'opened' && selectedNode.children.length === 0)) {
-					var next = getNextSibling(selectedNode);
+					var next = TreeInfo.nextSibling(root, selectedNode);
 					var current = selectedNode;
 
 					while(next == null) {
-						var parent = getParent(current);
+						var parent = TreeInfo.parent(root, current);
 						current = parent;
 						if(parent.id !== root.id) {
-							next = getNextSibling(parent);
+							next = TreeInfo.nextSibling(root, parent);
 						} else {
 							break;
 						}
@@ -263,10 +346,10 @@ define('Tree', [], function() {
 			};
 
 			var upArrowPressed = function() {
-				var prev = getPrevSibling(selectedNode);
+				var prev = TreeInfo.prevSibling(root, selectedNode);
 				if(prev != null) {
 					while(prev.container === true && prev.status === 'opened') {
-						var lastChild = getLastChild(prev);
+						var lastChild = TreeInfo.lastChild(prev);
 						if(null != lastChild) {
 							prev = lastChild;
 						} else {
@@ -274,7 +357,7 @@ define('Tree', [], function() {
 						}
 					}
 				} else if(prev == null) {
-					prev = getParent(selectedNode);
+					prev = TreeInfo.parent(root, selectedNode);
 					if(prev.id === root.id) {
 						prev = null;
 					}
@@ -308,82 +391,6 @@ define('Tree', [], function() {
 						break;
 				}
 			});
-		};
-
-		var getParent = function(node) {
-			if(node.id === root.id) {
-				return node;
-			}
-
-			var parent = null;
-			var walk = function(current) {
-				if(!current.container) {
-					return;
-				}
-				for(var i in current.children) {
-					if(current.children[i].id === node.id) {
-						parent = current;
-						break;
-					} else {
-						walk(current.children[i]);
-					}
-				}
-			};
-
-			walk(root);
-			return parent;
-		};
-
-		var getChildIndex = function(parent, child) {
-			for(var i in parent.children) {
-				if(parent.children[i].id === child.id) {
-					return parseInt(i);
-				}
-			}
-
-			return -1;
-		};
-
-		var getNextSibling = function(node) {
-			var parent = getParent(node);
-			var myIndex = getChildIndex(parent, node);
-			var nextSiblingIndex = myIndex + 1;
-
-			if(parent.children.length === nextSiblingIndex) {
-				return null;
-			} else {
-				return parent.children[nextSiblingIndex];
-			}
-		};
-
-		var getPrevSibling = function(node) {
-			var parent = getParent(node);
-			var myIndex = getChildIndex(parent, node);
-			var prevSiblingIndex = myIndex - 1;
-
-			if(prevSiblingIndex < 0) {
-				return null;
-			} else {
-				return parent.children[prevSiblingIndex];
-			}
-		};
-
-		var getLastChild = function(node) {
-			var size = node.children.length;
-			if(size === 0) {
-				return null;
-			} else {
-				return node.children[size - 1];
-			}
-		};
-
-		var removeFromParent = function(node) {
-			var parent = getParent(node);
-			var index = getChildIndex(parent, node);
-
-			if(parent !== null && index !== -1) {
-				parent.children.splice(index, 1);
-			}
 		};
 
 		var registerIsOnScreen = function() {
@@ -445,7 +452,10 @@ define('Tree', [], function() {
 			},
 			delete: function(node) {
 				$(treeSelector + " #node_" + node.id).remove();
-				removeFromParent(node);
+				TreeInfo.removeFromParent(root, node);
+				if(selectedNode != null & selectedNode.id == node.id) {
+					selectedNode = null;
+				}
 			}
 		};
 	};
