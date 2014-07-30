@@ -140,11 +140,42 @@ define('Tree', [], function() {
 			});
 		};
 
+		var getHtml = function(node, options) {
+			var id = node.id;
+			var name = node.name;
+			var menu = node.container ? options.foldermenu : options.itemmenu;
+
+			html = "<li id='node_" + id + "' class='node-li'>" +
+				"<div id='node_div_" + id + "' class='node-div'>" +
+					"<span id='node_span_" + id + "' class='node-hover'>" +
+						"<span id='img_" + id + "' class='node-icon " + (node.container ? "node-closed" : "node-non-expandable") + "'>&nbsp;</span>" +
+						"<span class='node-icon " + (node.container ? "node-folder" : "node-item") + "'></span>" +
+						"<span id='node_name_span_" + id + "' class='node-name'>" + name + "</span>";
+						//attach context menu
+						if(menu) {
+							html += "<span id='menu_span_" + id + "' style='display:none;'>" +
+										"<div id='menu_div_" + id + "' class='dropdown' style='display:inline-block;'>" +
+											"<div id='menu_caret_div_" + id + "' data-toggle='dropdown' class='menu-caret-div'><span class='caret'></span></div>" +
+											"<ul id='menu_ul_" + id + "' class='dropdown-menu' role='menu'></ul>" +
+										"</div>" + //menu_div
+									"</span>"; //menu_span
+						}
+
+				html += "</span>" + //node_span
+				"</div>" + //node_div
+			"</li>"; //node_
+
+			return html;
+		};
+
 		var append = function(parent, children, callback) {
-			getHtml(children, function(html) {
-				callback(html);
-				attachHandlers(children);
-			});
+			var html = "";
+			for(var i in children) {
+				html += getHtml(children[i], options);
+			}
+
+			callback(html);
+			attachHandlers(children);
 		};
 
 		var expand = function(node) {
@@ -277,63 +308,6 @@ define('Tree', [], function() {
 						break;
 				}
 			});
-		};
-
-		var getHtml = function(nodes, callback) {
-			var getNumWorkers = function(size) {
-				if(size <= 100) {
-					return 1;
-				} else if(size <= 500) {
-					return 5;
-				} else {
-					return 10;
-				}
-			};
-
-			var numWorkers = getNumWorkers(nodes.length);
-			var workerSize = parseInt(Math.ceil(nodes.length / numWorkers));
-			var workers = [];
-			var responses = [];
-			var messages = [];
-			var countDownLatch = numWorkers;
-
-			for(var i = 0; i < numWorkers; i++) {
-				messages.push({
-					index: i,
-					options: options,
-					json: []
-				});
-
-				for(var j = 0; j < workerSize; j++) {
-					var index = j + (i * workerSize);
-					if(index === nodes.length) {
-						break;
-					}
-					messages[i].json.push(nodes[index]);
-				}
-			}
-
-			var workerCallback = function(e) {
-				var obj = JSON.parse(e.data);
-				responses[obj.index] = obj.html;
-
-				if(--countDownLatch === 0) {
-					var html = "";
-					for(var j in responses) {
-						html += responses[j];
-					}
-					callback(html);
-				}
-			};
-
-			for(var k = 0; k < numWorkers; k++) {
-				workers.push(new Worker("scripts/tree/js/worker.js"));
-				responses.push({});
-
-				workers[k].addEventListener("message", workerCallback, false);
-
-				workers[k].postMessage(JSON.stringify(messages[k]));
-			}
 		};
 
 		var getParent = function(node) {
